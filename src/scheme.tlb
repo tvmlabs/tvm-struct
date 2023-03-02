@@ -1,0 +1,20 @@
+nothing$0 {X:Type} = Maybe X;
+just$1 {X:Type} value:X = Maybe X;
+
+small_str#_ len:uint7 string:(len * [ uint8 ]) = SmallStr;
+
+version#_ commit:bits160 semantic:bits = Version;
+
+metadata#_ sold:^Version linker:^Version
+        compiled_at:uint64 name:SmallStr
+        desc:bits = Metadata;
+
+// struct TVMContractE0 (./src/tvc)
+// ------------------------------------------------
+// 0x4f511203 is a crc32 hash of "tvm_contract" string
+// e – is a uint8 edition of this scheme (current is 0)
+// code – reference to cell with tvm smart contract code
+// metadata – optional reference to cell with context metadata
+tvm_contract#4f511203 e:uint8
+    code:^Cell meta:(Maybe ^Metadata)
+    { e = 0 } = TVMContract;

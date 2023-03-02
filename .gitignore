@@ -1,0 +1,19 @@
+# main
+/target
+/Cargo.lock
+
+# vscode
+.vscode
+.history
+*.vsix
+
+# mac os
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# logs
+*.log
+
+# other
+.idea
