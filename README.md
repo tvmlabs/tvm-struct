@@ -4,4 +4,4 @@
 
 > :warning: Work in progress, interface can be changed! This isn't production ready version yet.
 
-This repository contains an implementation of frequently used structures that aren't part of blocks and/or don't participate in the source code of the ever-node. The schemes are described in the [`src/scheme.tlb`](./src/scheme.tlb).
+This repository contains an implementation of frequently used structures that aren't part of blocks and/or don't participate in the source code of the ever-node. The schemes are described in the [`src/scheme.tlb`](./src/scheme.tlb) file.

@@ -22,23 +22,29 @@ use ton_types::{BuilderData, Cell, IBitstring, SliceData};
 
 pub const MAX_UINT7: usize = 127; // 2 ** 7 - 1
 
+#[derive(Debug, failure::Fail)]
+pub enum DeserializationError {
+    #[fail(display = "unexpected tlb tag")]
+    UnexpectedTLBTag,
+}
+
 // small_str#_ len:uint7 string:(len * [ uint8 ]) = SmallStr;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SmallStr {
     pub string: String,
 }
 
-impl SmallStr {
-    pub fn new<S: Into<String>>(string: S) -> Self {
-        Self {
-            string: string.into(),
-        }
-    }
+#[derive(Debug, Eq, PartialEq, failure::Fail)]
+pub enum SmallStrError {
+    #[fail(display = "string length must be <= 127")]
+    TooLarge,
 }
 
-#[derive(Debug, failure::Fail)]
-#[fail(display = "string length must be <= 127")]
-pub struct TooLargeError();
+impl SmallStr {
+    pub fn new(string: String) -> Self {
+        Self { string }
+    }
+}
 
 impl Serializable for SmallStr {
     fn write_to(&self, builder: &mut BuilderData) -> ton_types::Result<()> {
@@ -46,7 +52,7 @@ impl Serializable for SmallStr {
         let str_bytes_len = str_bytes.len();
 
         if str_bytes_len > MAX_UINT7 {
-            return Err(TooLargeError().into());
+            return Err(SmallStrError::TooLarge.into());
         }
 
         builder.append_bits(str_bytes_len, 7)?;
@@ -62,33 +68,30 @@ impl Deserializable for SmallStr {
         slice.move_by(7)?;
 
         let str_bytes = slice.get_next_bytes(str_bytes_len.into())?;
-
         self.string = String::from_utf8(str_bytes)?;
+
         Ok(())
     }
 }
 
-// version#_ commit:bits160 file_sha256:bits256 semantic:bits = Version;
+// version#_ commit:bits160 semantic:bits = Version;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Version {
     pub commit: [u8; 20],
     pub semantic: String,
 }
 
-impl Default for Version {
-    fn default() -> Self {
-        Self {
-            commit: [0; 20],
-            semantic: Default::default(),
-        }
+impl Version {
+    pub fn new(commit: [u8; 20], semantic: String) -> Self {
+        Self { commit, semantic }
     }
 }
 
-impl Version {
-    pub fn new<S: Into<String>>(commit: [u8; 20], semantic: S) -> Self {
+impl Default for Version {
+    fn default() -> Self {
         Self {
-            commit,
-            semantic: semantic.into(),
+            commit: [0u8; 20],
+            semantic: Default::default(),
         }
     }
 }
@@ -114,8 +117,8 @@ impl Deserializable for Version {
 }
 
 // metadata#_ sold:^Version linker:^Version
-//            compiled_at:uint64 name:SmallStr
-//            desc:bits = Metadata;
+//         compiled_at:uint64 name:SmallStr
+//         desc:bits = Metadata;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Metadata {
     pub sold: Version,
@@ -126,19 +129,19 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub fn new<S: Into<String>>(
+    pub fn new(
         sold: Version,
         linker: Version,
         compiled_at: u64,
         name: SmallStr,
-        desc: S,
+        desc: String,
     ) -> Self {
         Self {
             sold,
             linker,
             compiled_at,
             name,
-            desc: desc.into(),
+            desc,
         }
     }
 }
@@ -173,66 +176,114 @@ impl Deserializable for Metadata {
     }
 }
 
-// TVMContractE0 – TVC edition 0
-// tvm_contract#4f511203 e:uint8
-//     code:^Cell meta:(Maybe ^Metadata)
-//     { e = 0 } = TVMContract;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct TVMContractE0 {
+pub struct TvcFrst {
     pub code: Cell,
     pub meta: Option<Metadata>,
 }
 
-impl TVMContractE0 {
-    const TLB_TAG: u32 = 0x4f511203;
-    const EDITION: u8 = 0;
-
+impl TvcFrst {
     pub fn new(code: Cell, meta: Option<Metadata>) -> Self {
         Self { code, meta }
     }
 }
 
-impl Serializable for TVMContractE0 {
-    fn write_to(&self, builder: &mut BuilderData) -> ton_types::Result<()> {
-        builder.append_u32(Self::TLB_TAG)?;
-        builder.append_u8(Self::EDITION)?;
+// tvc_none#a8775f2f = TvmSmc;
+// tvc_frst#ece10b0d code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub enum TvmSmc {
+    #[default]
+    None,
+    TvcFrst(TvcFrst),
+}
 
-        builder.checked_append_reference(self.code.serialize()?)?;
+impl TvmSmc {
+    const TVC_NONE_TAG: u32 = 0xa8775f2f;
+    const TVC_FRST_TAG: u32 = 0xece10b0d;
 
-        if let Some(meta) = &self.meta {
-            builder.append_bit_one()?;
-            builder.checked_append_reference(meta.serialize()?)?;
+    fn tvc_frst_from_slice(slice: &mut SliceData) -> ton_types::Result<Self> {
+        let code = Cell::construct_from_cell(slice.reference(0)?)?;
+
+        let meta = if slice.get_next_bit()? == true {
+            Some(Metadata::construct_from_cell(slice.reference(1)?)?)
         } else {
-            builder.append_bit_zero()?;
+            None
+        };
+
+        Ok(Self::TvcFrst(TvcFrst::new(code, meta)))
+    }
+}
+
+impl Serializable for TvmSmc {
+    fn write_to(&self, builder: &mut BuilderData) -> ton_types::Result<()> {
+        if let TvmSmc::None = self {
+            builder.append_u32(Self::TVC_NONE_TAG)?;
+            return Ok(());
         }
+
+        if let TvmSmc::TvcFrst(tvc_frst) = self {
+            builder.append_u32(Self::TVC_FRST_TAG)?;
+            builder.checked_append_reference(tvc_frst.code.serialize()?)?;
+
+            if let Some(meta) = &tvc_frst.meta {
+                builder.append_bit_one()?;
+                builder.checked_append_reference(meta.serialize()?)?;
+            } else {
+                builder.append_bit_zero()?;
+            }
+
+            return Ok(());
+        }
+
+        unreachable!()
+    }
+}
+
+impl Deserializable for TvmSmc {
+    fn read_from(&mut self, slice: &mut SliceData) -> ton_types::Result<()> {
+        let tag = slice.get_next_u32()?;
+
+        *self = match tag {
+            Self::TVC_NONE_TAG => Self::None,
+            Self::TVC_FRST_TAG => Self::tvc_frst_from_slice(slice)?,
+            _ => return Err(DeserializationError::UnexpectedTLBTag.into()),
+        };
 
         Ok(())
     }
 }
 
-#[derive(Debug, failure::Fail)]
-pub enum TVMContractE0Error {
-    #[fail(display = "unexpected tlb tag, must be 32 bits of 0x4f511203")]
-    UnexpectedTLBTag,
-    #[fail(display = "unexpected edition, for current struct must be 0")]
-    UnexpectedEdition,
+// tvc#0167f70c tvc:TvmSmc = TVC;
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TVC {
+    pub tvc: TvmSmc,
 }
 
-impl Deserializable for TVMContractE0 {
+impl TVC {
+    const TLB_TAG: u32 = 0x0167f70c;
+
+    pub fn new(tvc: TvmSmc) -> Self {
+        Self { tvc }
+    }
+}
+
+impl Serializable for TVC {
+    fn write_to(&self, builder: &mut BuilderData) -> ton_types::Result<()> {
+        builder.append_u32(Self::TLB_TAG)?;
+        builder.append_builder(&self.tvc.write_to_new_cell()?)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializable for TVC {
     fn read_from(&mut self, slice: &mut SliceData) -> ton_types::Result<()> {
-        if slice.get_next_u32()? != Self::TLB_TAG {
-            return Err(TVMContractE0Error::UnexpectedTLBTag.into());
+        let tag = slice.get_next_u32()?;
+        if tag != Self::TLB_TAG {
+            return Err(DeserializationError::UnexpectedTLBTag.into());
         }
 
-        if slice.get_next_byte()? != Self::EDITION {
-            return Err(TVMContractE0Error::UnexpectedEdition.into());
-        }
-
-        self.code = Cell::construct_from_cell(slice.reference(0)?)?;
-
-        if slice.get_next_bit()? == true {
-            self.meta = Some(Metadata::construct_from_cell(slice.reference(1)?)?);
-        }
+        self.tvc = TvmSmc::construct_from(slice)?;
 
         Ok(())
     }

@@ -9,12 +9,11 @@ metadata#_ sold:^Version linker:^Version
         compiled_at:uint64 name:SmallStr
         desc:bits = Metadata;
 
-// struct TVMContractE0 (./src/tvc)
-// ------------------------------------------------
-// 0x4f511203 is a crc32 hash of "tvm_contract" string
-// e – is a uint8 edition of this scheme (current is 0)
-// code – reference to cell with tvm smart contract code
-// metadata – optional reference to cell with context metadata
-tvm_contract#4f511203 e:uint8
-    code:^Cell meta:(Maybe ^Metadata)
-    { e = 0 } = TVMContract;
+tvc_none#a8775f2f = TvmSmc;
+tvc_frst#ece10b0d code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
+
+tvc#0167f70c tvc:TvmSmc = TVC;
+
+// crc32 <(printf "tvc_none") == a8775f2f
+// crc32 <(printf "tvc_frst") == ece10b0d
+// crc32 <(printf "tvc")      == 0167f70c

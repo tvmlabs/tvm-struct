@@ -17,13 +17,13 @@
 use hex_literal::hex;
 use ton_block::{Deserializable, Serializable};
 
-use crate::tvc::*;
+use crate::scheme::*;
 
 #[test]
 fn test_small_str() {
     const CASE: &str = "hello cute kitty!";
 
-    let dat = SmallStr::new(CASE);
+    let dat = SmallStr::new(CASE.to_string());
     let boc = dat.write_to_bytes().unwrap();
 
     let deserialized = SmallStr::construct_from_bytes(boc.as_slice()).unwrap();
@@ -34,10 +34,14 @@ fn test_small_str() {
 fn test_small_str_too_long() {
     let case = &str::repeat("1", MAX_UINT7 + 1);
 
-    let dat = SmallStr::new(case);
-    let boc = dat.write_to_bytes().unwrap_err();
+    let bocerr = SmallStr::new(case.to_string())
+        .write_to_bytes()
+        .unwrap_err();
 
-    assert!(boc.downcast_ref::<TooLargeError>().is_some());
+    assert_eq!(
+        bocerr.downcast::<SmallStrError>().unwrap(),
+        SmallStrError::TooLarge
+    );
 }
 
 #[test]
@@ -45,7 +49,7 @@ fn test_version() {
     const COMMIT: [u8; 20] = hex!("4e97449a48c05600af00027d652519de61190b53");
     const SEMANTIC: &str = "v0.18.4";
 
-    let ver = Version::new(COMMIT, SEMANTIC);
+    let ver = Version::new(COMMIT, SEMANTIC.to_string());
 
     let boc = ver.write_to_bytes().unwrap();
     let deserialized = Version::construct_from_bytes(boc.as_slice()).unwrap();
@@ -59,16 +63,16 @@ fn test_metadata() {
     const COMPILED_AT: u64 = 1676912859;
     const DESC: &str = "Simple wallet v3 contract with seqno";
 
-    let sold_version = Version::new(COMMIT, "v0.1.1");
-    let linker_version = Version::new(COMMIT, "v0.2.2");
-    let name = SmallStr::new("WalletV3");
+    let sold_version = Version::new(COMMIT, "v0.1.1".to_string());
+    let linker_version = Version::new(COMMIT, "v0.2.2".to_string());
+    let name = SmallStr::new("WalletV3".to_string());
 
     let meta = Metadata::new(
         sold_version.clone(),
         linker_version.clone(),
         COMPILED_AT,
         name.clone(),
-        DESC,
+        DESC.to_string(),
     );
 
     let boc = meta.write_to_bytes().unwrap();
@@ -87,16 +91,18 @@ fn test_tvm_contract() {
 
     let code = Cell::construct_from_bytes(&CODEBOC).unwrap();
     let meta = Metadata::new(
-        Version::new(COMMIT, "v0.1.1"),
-        Version::new(COMMIT, "v0.2.2"),
+        Version::new(COMMIT, "v0.1.1".to_string()),
+        Version::new(COMMIT, "v0.2.2".to_string()),
         1676912859,
-        SmallStr::new("WalletV3"),
-        "Simple wallet v3 contract with seqno",
+        SmallStr::new("WalletV3".to_string()),
+        "Simple wallet v3 contract with seqno".to_string(),
     );
 
-    let tvc = TVMContractE0::new(code, Some(meta));
+    let smc = TvmSmc::TvcFrst(TvcFrst::new(code, Some(meta)));
+    let tvc = TVC::new(smc);
+
     let boc = tvc.write_to_bytes().unwrap();
-    let deserialized = TVMContractE0::construct_from_bytes(boc.as_slice()).unwrap();
+    let deserialized = TVC::construct_from_bytes(boc.as_slice()).unwrap();
 
     assert_eq!(tvc, deserialized);
 }
