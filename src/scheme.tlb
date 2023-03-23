@@ -1,11 +1,11 @@
 nothing$0 {X:Type} = Maybe X;
 just$1 {X:Type} value:X = Maybe X;
 
-byte$_ (## 8) = Byte;
-char$_ _:Byte = Char;
+_ (## 8) = Byte;
+_ Byte = Char;
 
-remainder#_ remainder:Cell = Remainder;
-strcont#_ _:Remainder = StrCont;
+_ Cell = Remainder;
+_ Remainder = StrCont;
 
 small_str#_ len:(## 7) string:(len * [ Char ]) = SmallStr;
 
@@ -15,11 +15,11 @@ metadata#_ sold:^Version linker:^Version
         compiled_at:uint64 name:SmallStr
         desc:StrCont = Metadata;
 
-tvc_none#a8775f2f = TvmSmc;
-tvc_frst#ece10b0d code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
+tvc_none#fa90fdb2 = TvmSmc;
+tvc_frst#b96aa11b code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
 
-tvc#0167f70c tvc:TvmSmc = TVC;
+tvc#8b5f2433 tvc:TvmSmc = TVC;
 
-// crc32 <(printf "tvc_none") == a8775f2f
-// crc32 <(printf "tvc_frst") == ece10b0d
-// crc32 <(printf "tvc")      == 0167f70c
+// crc32 <(printf "tvc_none = TvmSmc")                                 == fa90fdb2
+// crc32 <(printf "tvc_frst code:^Cell meta:Maybe ^Metadata = TvmSmc") == b96aa11b
+// crc32 <(printf "tvc tvc:TvmSmc = TVC")                              == 8b5f2433
