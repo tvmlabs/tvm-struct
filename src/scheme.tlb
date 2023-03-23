@@ -1,13 +1,19 @@
 nothing$0 {X:Type} = Maybe X;
 just$1 {X:Type} value:X = Maybe X;
 
-small_str#_ len:uint7 string:(len * [ uint8 ]) = SmallStr;
+byte$_ (## 8) = Byte;
+char$_ _:Byte = Char;
 
-version#_ commit:bits160 semantic:bits = Version;
+remainder#_ remainder:Cell = Remainder;
+strcont#_ _:Remainder = StrCont;
+
+small_str#_ len:(## 7) string:(len * [ Char ]) = SmallStr;
+
+version#_ commit:bits160 semantic:StrCont = Version;
 
 metadata#_ sold:^Version linker:^Version
         compiled_at:uint64 name:SmallStr
-        desc:bits = Metadata;
+        desc:StrCont = Metadata;
 
 tvc_none#a8775f2f = TvmSmc;
 tvc_frst#ece10b0d code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
