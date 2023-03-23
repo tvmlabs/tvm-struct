@@ -14,6 +14,12 @@
     limitations under the License.
 */
 
+// _ (## 8) = Byte;
+// _ Byte = Char;
+//
+// _ Cell = Remainder;
+// _ Remainder = StrCont;
+
 #[cfg(test)]
 mod tests;
 
@@ -28,7 +34,7 @@ pub enum DeserializationError {
     UnexpectedTLBTag,
 }
 
-// small_str#_ len:uint7 string:(len * [ uint8 ]) = SmallStr;
+// small_str#_ len:(## 7) string:(len * [ Char ]) = SmallStr;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SmallStr {
     pub string: String,
@@ -74,7 +80,7 @@ impl Deserializable for SmallStr {
     }
 }
 
-// version#_ commit:bits160 semantic:bits = Version;
+// version#_ commit:bits160 semantic:StrCont = Version;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Version {
     pub commit: [u8; 20],
@@ -118,7 +124,7 @@ impl Deserializable for Version {
 
 // metadata#_ sold:^Version linker:^Version
 //         compiled_at:uint64 name:SmallStr
-//         desc:bits = Metadata;
+//         desc:StrCont = Metadata;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Metadata {
     pub sold: Version,
@@ -188,8 +194,8 @@ impl TvcFrst {
     }
 }
 
-// tvc_none#a8775f2f = TvmSmc;
-// tvc_frst#ece10b0d code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
+// tvc_none#fa90fdb2 = TvmSmc;
+// tvc_frst#b96aa11b code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum TvmSmc {
     #[default]
@@ -198,8 +204,8 @@ pub enum TvmSmc {
 }
 
 impl TvmSmc {
-    const TVC_NONE_TAG: u32 = 0xa8775f2f;
-    const TVC_FRST_TAG: u32 = 0xece10b0d;
+    const TVC_NONE_TAG: u32 = 0xfa90fdb2;
+    const TVC_FRST_TAG: u32 = 0xb96aa11b;
 
     fn tvc_frst_from_slice(slice: &mut SliceData) -> ton_types::Result<Self> {
         let code = Cell::construct_from_cell(slice.reference(0)?)?;
@@ -253,14 +259,14 @@ impl Deserializable for TvmSmc {
     }
 }
 
-// tvc#0167f70c tvc:TvmSmc = TVC;
+// tvc#8b5f2433 tvc:TvmSmc = TVC;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TVC {
     pub tvc: TvmSmc,
 }
 
 impl TVC {
-    const TLB_TAG: u32 = 0x0167f70c;
+    const TLB_TAG: u32 = 0x8b5f2433;
 
     pub fn new(tvc: TvmSmc) -> Self {
         Self { tvc }
