@@ -81,7 +81,7 @@ impl Deserializable for SmallStr {
 }
 
 // version#_ commit:bits160 semantic:StrCont = Version;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Default, Clone, Debug, Eq, PartialEq)]
 pub struct Version {
     pub commit: [u8; 20],
     pub semantic: String,
@@ -90,15 +90,6 @@ pub struct Version {
 impl Version {
     pub fn new(commit: [u8; 20], semantic: String) -> Self {
         Self { commit, semantic }
-    }
-}
-
-impl Default for Version {
-    fn default() -> Self {
-        Self {
-            commit: [0u8; 20],
-            semantic: Default::default(),
-        }
     }
 }
 
@@ -210,7 +201,7 @@ impl TvmSmc {
     fn tvc_frst_from_slice(slice: &mut SliceData) -> ton_types::Result<Self> {
         let code = Cell::construct_from_cell(slice.reference(0)?)?;
 
-        let meta = if slice.get_next_bit()? == true {
+        let meta = if slice.get_next_bit()? {
             Some(Metadata::construct_from_cell(slice.reference(1)?)?)
         } else {
             None

@@ -68,10 +68,10 @@ fn test_metadata() {
     let name = SmallStr::new("WalletV3".to_string());
 
     let meta = Metadata::new(
-        sold_version.clone(),
-        linker_version.clone(),
+        sold_version,
+        linker_version,
         COMPILED_AT,
-        name.clone(),
+        name,
         DESC.to_string(),
     );
 
