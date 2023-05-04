@@ -1,25 +1,2 @@
-nothing$0 {X:Type} = Maybe X;
-just$1 {X:Type} value:X = Maybe X;
-
-_ (## 8) = Byte;
-_ Byte = Char;
-
-_ Cell = Remainder;
-_ Remainder = StrCont;
-
-small_str#_ len:(## 7) string:(len * [ Char ]) = SmallStr;
-
-version#_ commit:bits160 semantic:StrCont = Version;
-
-metadata#_ sold:^Version linker:^Version
-        compiled_at:uint64 name:SmallStr
-        desc:StrCont = Metadata;
-
-tvc_none#fa90fdb2 = TvmSmc;
-tvc_frst#b96aa11b code:^Cell meta:(Maybe ^Metadata) = TvmSmc;
-
-tvc#8b5f2433 tvc:TvmSmc = TVC;
-
-// crc32 <(printf "tvc_none = TvmSmc")                                 == fa90fdb2
-// crc32 <(printf "tvc_frst code:^Cell meta:Maybe ^Metadata = TvmSmc") == b96aa11b
-// crc32 <(printf "tvc tvc:TvmSmc = TVC")                              == 8b5f2433
+str#_ _:(HashmapE 16 Any) = MapString;
+tvc#0167f70c code:^Cell desc:MapString = TVC;

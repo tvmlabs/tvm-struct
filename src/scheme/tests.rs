@@ -14,94 +14,42 @@
     limitations under the License.
 */
 
-use hex_literal::hex;
 use ton_block::{Deserializable, Serializable};
+use ton_types::read_boc;
 
-use crate::scheme::*;
-
-#[test]
-fn test_small_str() {
-    const CASE: &str = "hello cute kitty!";
-
-    let dat = SmallStr::new(CASE.to_string());
-    let boc = dat.write_to_bytes().unwrap();
-
-    let deserialized = SmallStr::construct_from_bytes(boc.as_slice()).unwrap();
-    assert_eq!(dat, deserialized);
-}
-
-#[test]
-fn test_small_str_too_long() {
-    let case = &str::repeat("1", MAX_UINT7 + 1);
-
-    let bocerr = SmallStr::new(case.to_string())
-        .write_to_bytes()
-        .unwrap_err();
-
-    assert_eq!(
-        bocerr.downcast::<SmallStrError>().unwrap(),
-        SmallStrError::TooLarge
-    );
-}
-
-#[test]
-fn test_version() {
-    const COMMIT: [u8; 20] = hex!("4e97449a48c05600af00027d652519de61190b53");
-    const SEMANTIC: &str = "v0.18.4";
-
-    let ver = Version::new(COMMIT, SEMANTIC.to_string());
-
-    let boc = ver.write_to_bytes().unwrap();
-    let deserialized = Version::construct_from_bytes(boc.as_slice()).unwrap();
-
-    assert_eq!(ver, deserialized);
-}
-
-#[test]
-fn test_metadata() {
-    const COMMIT: [u8; 20] = hex!("4e97449a48c05600af00027d652519de61190b53");
-    const COMPILED_AT: u64 = 1676912859;
-    const DESC: &str = "Simple wallet v3 contract with seqno";
-
-    let sold_version = Version::new(COMMIT, "v0.1.1".to_string());
-    let linker_version = Version::new(COMMIT, "v0.2.2".to_string());
-    let name = SmallStr::new("WalletV3".to_string());
-
-    let meta = Metadata::new(
-        sold_version,
-        linker_version,
-        COMPILED_AT,
-        name,
-        DESC.to_string(),
-    );
-
-    let boc = meta.write_to_bytes().unwrap();
-    let deserialized = Metadata::construct_from_bytes(boc.as_slice()).unwrap();
-
-    assert_eq!(meta, deserialized);
-}
+use super::*;
+use hex_literal::hex;
 
 #[test]
 fn test_tvm_contract() {
-    const COMMIT: [u8; 20] = hex!("4e97449a48c05600af00027d652519de61190b53");
-    const CODEBOC: [u8; 41] = hex!(
-        // <{ SETCP0 ACCEPT PROGRAM{ main PROC:<{ }> }END>c PUSHREF SETCODE }>c
-        "B5EE9C7241010301001A00010EFF00F80088FB04010114FF00F4A413F4BCF2C80B020002D393E0BA78"
-    );
+    const DESCSTR: &str = r#"
+Once upon a time, there was a little kitten named Whiskers. Whiskers was the runt of the
+litter and always had trouble keeping up with his siblings. His mother loved him dearly,
+but he often felt left out during playtime.
 
-    let code = Cell::construct_from_bytes(&CODEBOC).unwrap();
-    let meta = Metadata::new(
-        Version::new(COMMIT, "v0.1.1".to_string()),
-        Version::new(COMMIT, "v0.2.2".to_string()),
-        1676912859,
-        SmallStr::new("WalletV3".to_string()),
-        "Simple wallet v3 contract with seqno".to_string(),
-    );
+One day, while exploring the yard, Whiskers stumbled upon a butterfly. Mesmerized by its
+beauty, Whiskers chased the butterfly around the garden, forgetting all about his troubles.
+From that day on, Whiskers became fascinated with the natural world and spent all his time
+exploring and learning about the creatures that lived around him.
 
-    let smc = TvmSmc::TvcFrst(TvcFrst::new(code, Some(meta)));
-    let tvc = TVC::new(smc);
+As he grew older, Whiskers became known throughout the neighborhood for his knowledge of
+nature and his ability to make friends with all kinds of animals. His siblings may have
+been faster and stronger, but Whiskers had found his own special talent and became a
+beloved member of the community.
+
+Despite his humble beginnings, Whiskers learned that he could achieve great things by
+following his passions and staying true to himself. And he knew that no matter how
+small he may seem, he had a big heart and a lot to offer the world.
+"#;
+
+    const CODEBOC: [u8; 27] = hex!("B5EE9C7241010101000C000014FF00F8008101008011A1EF0ED546");
+    let code = &read_boc(&CODEBOC).unwrap().roots[0];
+
+    let tvc = TVC::new(Some(code.to_owned()), Some(DESCSTR.to_string()));
 
     let boc = tvc.write_to_bytes().unwrap();
+    tvc.write_to_file("test.boc").unwrap();
+
     let deserialized = TVC::construct_from_bytes(boc.as_slice()).unwrap();
 
     assert_eq!(tvc, deserialized);
