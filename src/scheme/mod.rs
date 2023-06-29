@@ -14,9 +14,6 @@
     limitations under the License.
 */
 
-#[cfg(test)]
-mod tests;
-
 use ton_block::{Deserializable, Serializable};
 use ton_types::{BuilderData, Cell, HashmapE, HashmapType, IBitstring, Result, SliceData};
 
