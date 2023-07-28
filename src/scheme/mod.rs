@@ -30,7 +30,7 @@ pub struct TVC {
 }
 
 impl TVC {
-    const TVC_TAG: u32 = 0x0167f70c;
+    const TVC_TAG: u32 = 0xa2f0b81c;
 
     pub fn new(code: Option<Cell>, desc: Option<String>) -> Self {
         Self { code, desc }
