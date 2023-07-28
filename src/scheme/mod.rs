@@ -15,7 +15,7 @@
 */
 
 use ton_block::{Deserializable, Serializable};
-use ton_types::{BuilderData, Cell, IBitstring, Result, SliceData, fail};
+use ton_types::{fail, BuilderData, Cell, IBitstring, Result, SliceData};
 
 #[derive(Debug, failure::Fail)]
 pub enum DeserializationError {
@@ -28,7 +28,6 @@ pub struct TVC {
     pub code: Option<Cell>,
     pub desc: Option<String>,
 }
-
 
 impl TVC {
     const TVC_TAG: u32 = 0x0167f70c;
@@ -51,7 +50,7 @@ fn builder_store_bytes_ref(b: &mut BuilderData, data: &[u8]) -> Result<()> {
     while len > 0 {
         len -= cap;
         tpb.append_raw(&data[len..len + cap], cap * 8)?;
-        
+
         if len > 0 {
             let mut nb = BuilderData::new();
             nb.checked_append_reference(tpb.clone().into_cell()?)?;
@@ -73,7 +72,11 @@ pub fn slice_load_bytes_ref(slice: &mut SliceData) -> Result<Vec<u8>> {
 
     let rrb = slice.remaining_references();
     let mut curr: Cell = Cell::construct_from(slice)?;
-    assert_eq!(rrb - 1, slice.remaining_references(), "ref not loaded from slice");
+    assert_eq!(
+        rrb - 1,
+        slice.remaining_references(),
+        "ref not loaded from slice"
+    );
 
     loop {
         let cs = SliceData::load_cell(curr)?;
