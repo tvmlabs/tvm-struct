@@ -13,3 +13,4 @@ failure = '0.1.0'
 hex-literal = '0.3.4'
 ton_block = { git = 'https://github.com/tonlabs/ever-block.git', tag = '1.9.88' }
 ton_types = { git = 'https://github.com/tonlabs/ever-types.git', tag = '2.0.18' }
+
