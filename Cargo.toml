@@ -1,16 +1,15 @@
 [package]
-name = "ever-struct"
-version = "1.0.0"
-edition = "2021"
-authors = ["EverX Labs <hello@everx.dev>"]
-repository = "https://github.com/tonlabs/ever-struct"
-rust-version = "1.65"
-license = "Apache-2.0"
+authors = [ 'EverX Labs <hello@everx.dev>' ]
+edition = '2021'
+license = 'Apache-2.0'
+name = 'ever-struct'
+repository = 'https://github.com/tonlabs/ever-struct'
+rust-version = '1.65'
+version = '1.0.2'
 
 [dependencies]
-anyhow = "1.0.70"
-failure = "0.1.0"
-hex-literal = "0.3.4"
-
-ton_block = { git = 'https://github.com/tonlabs/ever-block.git', tag = '1.9.79' }
-ton_types = { git = 'https://github.com/tonlabs/ever-types.git', tag = '2.0.15' }
+anyhow = '1.0.70'
+failure = '0.1.0'
+hex-literal = '0.3.4'
+ton_block = { git = 'https://github.com/tonlabs/ever-block.git', tag = '1.9.88' }
+ton_types = { git = 'https://github.com/tonlabs/ever-types.git', tag = '2.0.18' }

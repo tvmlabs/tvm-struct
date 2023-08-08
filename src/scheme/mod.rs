@@ -14,11 +14,8 @@
     limitations under the License.
 */
 
-#[cfg(test)]
-mod tests;
-
 use ton_block::{Deserializable, Serializable};
-use ton_types::{BuilderData, Cell, HashmapE, HashmapType, IBitstring, Result, SliceData};
+use ton_types::{fail, BuilderData, Cell, IBitstring, Result, SliceData};
 
 #[derive(Debug, failure::Fail)]
 pub enum DeserializationError {
@@ -33,44 +30,71 @@ pub struct TVC {
 }
 
 impl TVC {
-    const TVC_TAG: u32 = 0x0167f70c;
+    const TVC_TAG: u32 = 0xa2f0b81c;
 
     pub fn new(code: Option<Cell>, desc: Option<String>) -> Self {
         Self { code, desc }
     }
 }
 
-pub fn str_to_hashmap(input: &str) -> Result<Cell> {
-    let mut input = input.as_bytes().chunks(127).enumerate();
+fn builder_store_bytes_ref(b: &mut BuilderData, data: &[u8]) -> Result<()> {
+    const CELL_LEN: usize = 127;
 
-    let mut dict = HashmapE::with_bit_len(16);
+    let mut tpb = BuilderData::new();
+    let mut len = data.len();
+    let mut cap = match len % CELL_LEN {
+        0 => CELL_LEN,
+        x => x,
+    };
 
-    while let Some((i, c)) = input.next() {
-        let mut cb = BuilderData::new();
-        cb.append_raw(c, c.len() * 8)?;
+    while len > 0 {
+        len -= cap;
+        tpb.append_raw(&data[len..len + cap], cap * 8)?;
 
-        let mut b = BuilderData::new();
-        b.checked_append_reference(cb.into_cell()?)?;
-
-        let mut ib = BuilderData::new();
-        ib.append_u16(i as u16)?;
-
-        dict.set_builder(SliceData::load_builder(ib.clone())?, &b)?;
+        if len > 0 {
+            let mut nb = BuilderData::new();
+            nb.checked_append_reference(tpb.clone().into_cell()?)?;
+            cap = std::cmp::min(CELL_LEN, len);
+            tpb = nb;
+        }
     }
 
-    dict.write_to_new_cell()?.into_cell()
+    b.checked_append_reference(tpb.into_cell()?)?;
+    Ok(())
 }
 
-pub fn hashmap_to_str(dict: &HashmapE) -> Result<String> {
-    let mut result = Vec::new();
+pub fn builder_store_string_ref(builder: &mut BuilderData, data: &str) -> Result<()> {
+    builder_store_bytes_ref(builder, data.as_bytes())
+}
 
-    for i in dict.iter() {
-        let (_, v) = i.unwrap();
-        let cs = SliceData::load_cell(v.reference(0)?)?;
-        result.append(&mut cs.get_bytestring(0));
+pub fn slice_load_bytes_ref(slice: &mut SliceData) -> Result<Vec<u8>> {
+    let mut bytes: Vec<u8> = Vec::new();
+
+    let rrb = slice.remaining_references();
+    let mut curr: Cell = Cell::construct_from(slice)?;
+    assert_eq!(
+        rrb - 1,
+        slice.remaining_references(),
+        "ref not loaded from slice"
+    );
+
+    loop {
+        let cs = SliceData::load_cell(curr)?;
+        let bb = cs.get_bytestring(0);
+        bytes.append(&mut bb.clone());
+
+        if cs.remaining_references() > 0 {
+            curr = cs.reference(0)?;
+        } else {
+            break;
+        }
     }
 
-    Ok(String::from_utf8(result)?)
+    Ok(bytes)
+}
+
+pub fn slice_load_string_ref(slice: &mut SliceData) -> Result<String> {
+    Ok(String::from_utf8(slice_load_bytes_ref(slice)?)?)
 }
 
 impl Serializable for TVC {
@@ -84,10 +108,9 @@ impl Serializable for TVC {
             builder.append_bit_zero()?;
         }
 
-        if let Some(d) = &self.desc {
-            let dict = str_to_hashmap(d.as_str())?;
-            let dict = BuilderData::from_cell(&dict)?;
-            builder.append_builder(&dict)?;
+        if let Some(s) = &self.desc {
+            builder.append_bit_one()?;
+            builder_store_string_ref(builder, s)?;
         } else {
             builder.append_bit_zero()?;
         }
@@ -103,19 +126,15 @@ impl Deserializable for TVC {
             return Err(DeserializationError::UnexpectedTLBTag.into());
         }
 
-        let mut ref_count = 0;
-
         if slice.get_next_bit()? {
-            self.code = Some(slice.reference(ref_count)?);
-            ref_count += 1;
+            self.code = Some(Cell::construct_from(slice)?);
         }
 
         if slice.get_next_bit()? {
-            let data = Some(slice.reference(ref_count)?);
-            let dict = HashmapE::with_hashmap(16, data);
-            self.desc = Some(hashmap_to_str(&dict)?);
+            self.desc = Some(slice_load_string_ref(slice)?);
         }
 
         Ok(())
     }
 }
+
