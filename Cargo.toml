@@ -5,12 +5,12 @@ license = 'Apache-2.0'
 name = 'ever-struct'
 repository = 'https://github.com/tonlabs/ever-struct'
 rust-version = '1.65'
-version = '1.0.2'
+version = '1.0.3'
 
 [dependencies]
 anyhow = '1.0.70'
 failure = '0.1.0'
 hex-literal = '0.3.4'
-ton_block = { git = 'https://github.com/tonlabs/ever-block.git', tag = '1.9.89' }
+ton_block = { git = 'https://github.com/tonlabs/ever-block.git', tag = '1.9.90' }
 ton_types = { git = 'https://github.com/tonlabs/ever-types.git', tag = '2.0.18' }
 
