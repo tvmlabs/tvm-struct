@@ -1,16 +1,15 @@
 [package]
-authors = [ 'EverX Labs <hello@everx.dev>' ]
+authors = [ 'TVM Labs <hello@tvmlabs.org>' ]
 edition = '2021'
 license = 'Apache-2.0'
-name = 'ever-struct'
-repository = 'https://github.com/tonlabs/ever-struct'
-rust-version = '1.65'
+name = 'tvm_struct'
+repository = 'https://github.com/tvmlabs/tvm-struct'
+rust-version = '1.75'
 version = '1.0.15'
 
 [dependencies]
 anyhow = '1.0.70'
 failure = '0.1.0'
 hex-literal = '0.3.4'
-ton_block = { git = 'https://github.com/tonlabs/ever-block.git', tag = '1.9.119' }
-ton_types = { git = 'https://github.com/tonlabs/ever-types.git', tag = '2.0.31' }
-
+tvm_block = { git = 'https://github.com/tvmlabs/tvm-block.git', branch = "main" }
+tvm_types = { git = 'https://github.com/tvmlabs/tvm-types.git', branch = "main" }

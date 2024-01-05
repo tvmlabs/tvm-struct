@@ -14,8 +14,8 @@
     limitations under the License.
 */
 
-use ton_block::{Deserializable, Serializable};
-use ton_types::{fail, BuilderData, Cell, IBitstring, Result, SliceData};
+use tvm_block::{Deserializable, Serializable};
+use tvm_types::{fail, BuilderData, Cell, IBitstring, Result, SliceData};
 
 #[derive(Debug, failure::Fail)]
 pub enum DeserializationError {
@@ -98,7 +98,7 @@ pub fn slice_load_string_ref(slice: &mut SliceData) -> Result<String> {
 }
 
 impl Serializable for TVC {
-    fn write_to(&self, builder: &mut BuilderData) -> ton_types::Result<()> {
+    fn write_to(&self, builder: &mut BuilderData) -> tvm_types::Result<()> {
         builder.append_u32(Self::TVC_TAG)?;
 
         if let Some(c) = &self.code {
@@ -120,7 +120,7 @@ impl Serializable for TVC {
 }
 
 impl Deserializable for TVC {
-    fn read_from(&mut self, slice: &mut SliceData) -> ton_types::Result<()> {
+    fn read_from(&mut self, slice: &mut SliceData) -> tvm_types::Result<()> {
         let tag = slice.get_next_u32()?;
         if tag != Self::TVC_TAG {
             return Err(DeserializationError::UnexpectedTLBTag.into());
@@ -137,4 +137,3 @@ impl Deserializable for TVC {
         Ok(())
     }
 }
-
