@@ -1,21 +1,25 @@
-/*
-    Copyright 2023 EverX Labs.
+// Copyright 2023 EverX Labs.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
-
-use tvm_block::{Deserializable, Serializable};
-use tvm_types::{fail, BuilderData, Cell, IBitstring, Result, SliceData};
+use tvm_block::Deserializable;
+use tvm_block::Serializable;
+use tvm_types::fail;
+use tvm_types::BuilderData;
+use tvm_types::Cell;
+use tvm_types::IBitstring;
+use tvm_types::Result;
+use tvm_types::SliceData;
 
 #[derive(Debug, failure::Fail)]
 pub enum DeserializationError {
@@ -72,11 +76,7 @@ pub fn slice_load_bytes_ref(slice: &mut SliceData) -> Result<Vec<u8>> {
 
     let rrb = slice.remaining_references();
     let mut curr: Cell = Cell::construct_from(slice)?;
-    assert_eq!(
-        rrb - 1,
-        slice.remaining_references(),
-        "ref not loaded from slice"
-    );
+    assert_eq!(rrb - 1, slice.remaining_references(), "ref not loaded from slice");
 
     loop {
         let cs = SliceData::load_cell(curr)?;
