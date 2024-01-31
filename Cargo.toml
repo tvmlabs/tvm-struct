@@ -7,8 +7,7 @@ rust-version = "1.75"
 version = "2.0.0"
 
 [dependencies]
-anyhow = "1.0.79"
-failure = "0.1.8"
 hex-literal = "0.4.1"
-tvm_block = { git = "https://github.com/tvmlabs/tvm-block", branch = "main" }
-tvm_types = { git = "https://github.com/tvmlabs/tvm-types", branch = "main" }
+thiserror = "1.0.56"
+tvm_block = { git = "https://github.com/tvmlabs/tvm-block", tag = "2.0.0" }
+tvm_types = { git = "https://github.com/tvmlabs/tvm-types", tag = "3.0.1" }

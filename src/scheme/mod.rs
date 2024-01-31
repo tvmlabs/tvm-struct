@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use thiserror::Error;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 
-#[derive(Debug, failure::Fail)]
+#[derive(Debug, Error)]
 pub enum DeserializationError {
-    #[fail(display = "unexpected tlb tag")]
+    #[error("unexpected tlb tag")]
     UnexpectedTLBTag,
 }
 
